@@ -33,7 +33,7 @@ export default function AboutSection() {
               <div className="absolute -top-6 -left-6 w-24 h-24 bg-agri-500/20 rounded-full z-0"></div>
               <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-agri-500/20 rounded-full z-0"></div>
               <img 
-                src="https://images.unsplash.com/photo-1655185497004-f3018eab9cb3?q=80&w=3164&auto=format&fit=crop"
+                src="src\Images\istockphoto-1316735334-612x612.jpg"
                 alt="Farmers using AgriSmart technology"
                 className="rounded-lg shadow-2xl w-full h-auto relative z-10"
               />
