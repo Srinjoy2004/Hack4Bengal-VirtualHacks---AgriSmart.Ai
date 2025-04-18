@@ -12,7 +12,7 @@ const programs = [
     date: "Monthly",
     location: "Multiple Locations",
     participants: "500+ per month",
-    imageUrl: "https://images.unsplash.com/photo-1620945726703-78bc95555d48?q=80&w=2060&auto=format&fit=crop"
+    imageUrl: "src/Images/istockphoto-1360520451-612x612.jpg"
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ const programs = [
     date: "Bi-weekly",
     location: "Regional Centers",
     participants: "300+ per session",
-    imageUrl: "https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?q=80&w=2070&auto=format&fit=crop"
+    imageUrl: "src/Images/istockphoto-1386152719-612x612.jpg"
   },
   {
     id: 3,
@@ -39,7 +39,7 @@ const programs = [
     date: "Quarterly",
     location: "Schools & Colleges",
     participants: "750+ per quarter",
-    imageUrl: "https://images.unsplash.com/photo-1567521464027-f127ff144326?q=80&w=2033&auto=format&fit=crop"
+    imageUrl: "src/Images/image_750x500_657ad9e35f2bc.jpg"
   }
 ];
 
