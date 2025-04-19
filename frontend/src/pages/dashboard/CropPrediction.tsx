@@ -190,7 +190,7 @@ export default function CropPrediction() {
                   <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
                     {index + 1}
                   </div>
-                  <span className="text-lg">{pred.crop} ({(pred.confidence * 100).toFixed(2)}%)</span>
+                  <span className="text-lg">{pred.crop} ({(pred.confidence ).toFixed(2)}%)</span>
                 </li>
               ))}
             </ul>
@@ -371,7 +371,7 @@ export default function CropPrediction() {
             <option value="">-- Select Crop --</option>
             {predictions.map(pred => (
               <option key={pred.crop} value={pred.crop}>
-                {pred.crop} ({(pred.confidence * 100).toFixed(2)}%)
+                {pred.crop} ({(pred.confidence).toFixed(2)}%)
               </option>
             ))}
           </select>
