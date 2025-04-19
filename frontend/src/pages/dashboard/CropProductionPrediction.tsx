@@ -1,6 +1,24 @@
 import { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+interface PredictionResponse {
+  predicted_production: number;
+  predicted_yield?: number;
+  confidence?: number;
+  monthly_forecast?: Array<{
+    month: string;
+    rainfall: number;
+    temperature: number;
+    production: number;
+  }>;
+  environmental_factors?: {
+    rainfall?: number;
+    temperature_range?: string;
+    soil_type?: string;
+    growing_period?: string;
+  };
+}
+
 export default function CropProductionPrediction() {
   const [state, setState] = useState<string>('');
   const [district, setDistrict] = useState<string>('');
@@ -9,39 +27,74 @@ export default function CropProductionPrediction() {
   const [area, setArea] = useState<string>('');
   const [year, setYear] = useState<string>('2025');
   const [showPrediction, setShowPrediction] = useState<boolean>(false);
+  const [predictionData, setPredictionData] = useState<PredictionResponse | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   
   const states = ["Andhra Pradesh", "Assam", "Bihar", "Gujarat", "Haryana", "Karnataka", "Kerala", "Madhya Pradesh", "Maharashtra", "Punjab", "Rajasthan", "Tamil Nadu", "Telangana", "Uttar Pradesh", "West Bengal"];
   
   const districts: Record<string, string[]> = {
     "Karnataka": ["Bangalore Urban", "Bangalore Rural", "Mysore", "Belgaum", "Gulbarga", "Raichur"],
     "Maharashtra": ["Mumbai", "Pune", "Nagpur", "Nashik", "Aurangabad", "Solapur"],
-    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli", "Thanjavur"]
+    "Tamil Nadu": ["Chennai", "Coimbatore", "Madurai", "Salem", "Tiruchirappalli", "Thanjavur"],
+    "West Bengal": ["Howrah", "Kolkata", "North 24 Parganas", "South 24 Parganas", "Murshidabad"]
   };
   
   const crops = ["Rice", "Wheat", "Maize", "Sugarcane", "Cotton", "Groundnut", "Soybean", "Potato", "Tomato", "Onion"];
   
   const seasons = ["Kharif", "Rabi", "Zaid", "Whole Year"];
   
-  const years = ["2024", "2025", "2026"];
+  const years = ["2021", "2022", "2023", "2024", "2025", "2026"];
   
-  const predictiveData = [
-    { name: 'Jan', rainfall: 20, temperature: 22, production: 0 },
-    { name: 'Feb', rainfall: 30, temperature: 24, production: 0 },
-    { name: 'Mar', rainfall: 45, temperature: 28, production: 50 },
-    { name: 'Apr', rainfall: 40, temperature: 32, production: 120 },
-    { name: 'May', rainfall: 50, temperature: 35, production: 180 },
-    { name: 'Jun', rainfall: 200, temperature: 32, production: 250 },
-    { name: 'Jul', rainfall: 250, temperature: 30, production: 320 },
-    { name: 'Aug', rainfall: 220, temperature: 30, production: 390 },
-    { name: 'Sep', rainfall: 180, temperature: 29, production: 450 },
-    { name: 'Oct', rainfall: 80, temperature: 28, production: 500 },
-    { name: 'Nov', rainfall: 40, temperature: 26, production: 450 },
-    { name: 'Dec', rainfall: 30, temperature: 22, production: 400 },
-  ];
-  
-  const handlePredict = () => {
-    // In a real app, this would make an API call with the form data
-    setShowPrediction(true);
+  const handlePredict = async () => {
+    if (!state || !district || !crop || !season || !area || !year) {
+      setError('Please fill all fields');
+      setShowPrediction(false);
+      setPredictionData(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setShowPrediction(false);
+    setPredictionData(null);
+    
+    try {
+      const response = await fetch('https://rudra2003-price-prediction-crops.hf.space/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          state,
+          district,
+          crop,
+          season,
+          area: parseFloat(area),
+          year: parseInt(year),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data: PredictionResponse = await response.json();
+      
+      // Validate essential field
+      if (typeof data.predicted_production !== 'number') {
+        throw new Error('Invalid or missing predicted_production in API response');
+      }
+
+      setPredictionData(data);
+      setShowPrediction(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while fetching prediction');
+      setPredictionData(null);
+      setShowPrediction(false);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // SVG Icons
@@ -240,30 +293,26 @@ export default function CropProductionPrediction() {
           
           <button
             onClick={handlePredict}
-            className="w-full mt-8 p-4 rounded-lg text-white font-medium transition-all bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg flex items-center justify-center"
+            disabled={isLoading}
+            className={`w-full mt-8 p-4 rounded-lg text-white font-medium transition-all bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <span className="mr-2">
               <BarChartIcon />
             </span>
-            Predict
+            {isLoading ? 'Predicting...' : 'Predict'}
           </button>
           
-          {showPrediction && (
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+              {error}
+            </div>
+          )}
+
+          {showPrediction && predictionData && (
             <div className="mt-10">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Production Prediction</h2>
               
               <div className="grid lg:grid-cols-3 gap-4 mb-8">
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-medium text-gray-700">Estimated Yield</h3>
-                    <div className="text-green-600">
-                      <PlantIcon />
-                    </div>
-                  </div>
-                  <p className="text-3xl font-bold text-green-700">42.5 q/ha</p>
-                  <p className="text-sm text-gray-600 mt-1">Quintals per hectare</p>
-                </div>
-                
                 <div className="bg-green-50 rounded-lg p-4 border border-green-100">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-medium text-gray-700">Total Production</h3>
@@ -271,114 +320,160 @@ export default function CropProductionPrediction() {
                       <BarChartIcon />
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-green-700">{area ? (parseFloat(area) * 42.5).toFixed(1) : '0'} q</p>
+                  <p className="text-3xl font-bold text-green-700">
+                    {typeof predictionData.predicted_production === 'number' ? predictionData.predicted_production.toFixed(1) : 'N/A'} q
+                  </p>
                   <p className="text-sm text-gray-600 mt-1">Total expected production</p>
                 </div>
                 
-                <div className="bg-green-50 rounded-lg p-4 border border-green-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-medium text-gray-700">Confidence</h3>
-                    <div className="text-green-600">
-                      <CheckIcon />
+                {typeof predictionData.predicted_yield === 'number' && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-lg font-medium text-gray-700">Estimated Yield</h3>
+                      <div className="text-green-600">
+                        <PlantIcon />
+                      </div>
                     </div>
+                    <p className="text-3xl font-bold text-green-700">
+                      {predictionData.predicted_yield.toFixed(1)} q/ha
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">Quintals per hectare</p>
                   </div>
-                  <p className="text-3xl font-bold text-green-700">87%</p>
-                  <p className="text-sm text-gray-600 mt-1">Prediction accuracy</p>
-                </div>
+                )}
+                
+                {typeof predictionData.confidence === 'number' && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-lg font-medium text-gray-700">Confidence</h3>
+                      <div className="text-green-600">
+                        <CheckIcon />
+                      </div>
+                    </div>
+                    <p className="text-3xl font-bold text-green-700">
+                      {(predictionData.confidence * 100).toFixed(0)}%
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">Prediction accuracy</p>
+                  </div>
+                )}
               </div>
               
-              <div className="grid lg:grid-cols-2 gap-8">
-                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
-                  <h3 className="text-lg font-medium text-gray-700 mb-4">Production Forecast</h3>
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={predictiveData}
-                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line 
-                          type="monotone" 
-                          dataKey="production" 
-                          stroke="#16a34a" 
-                          activeDot={{ r: 8 }} 
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+              {Array.isArray(predictionData.monthly_forecast) && (
+                <div className="grid lg:grid-cols-2 gap-8">
+                  <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                    <h3 className="text-lg font-medium text-gray-700 mb-4">Production Forecast</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={predictionData.monthly_forecast.map(item => ({
+                            name: item.month ?? 'Unknown',
+                            rainfall: typeof item.rainfall === 'number' ? item.rainfall : 0,
+                            temperature: typeof item.temperature === 'number' ? item.temperature : 0,
+                            production: typeof item.production === 'number' ? item.production : 0,
+                          }))}
+                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Line 
+                            type="monotone" 
+                            dataKey="production" 
+                            stroke="#16a34a" 
+                            activeDot={{ r: 8 }} 
+                            strokeWidth={2}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
-                  <h3 className="text-lg font-medium text-gray-700 mb-4">Environmental Factors</h3>
                   
-                  <div className="space-y-4">
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg">
-                      <div className="bg-blue-100 p-2 rounded-full mr-3">
-                        <span className="text-blue-600">
-                          <DropletsIcon />
-                        </span>
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-medium text-gray-700">Average Rainfall</p>
-                        <p className="text-sm text-gray-500">95.4 mm per month</p>
-                      </div>
-                      <div className="bg-blue-50 px-3 py-1 rounded-full">
-                        <span className="text-blue-800 font-medium">Adequate</span>
+                  {predictionData.environmental_factors && (
+                    <div className="bg-white rounded-lg shadow p-4 border border-gray-100">
+                      <h3 className="text-lg font-medium text-gray-700 mb-4">Environmental Factors</h3>
+                      
+                      <div className="space-y-4">
+                        {typeof predictionData.environmental_factors.rainfall === 'number' && (
+                          <div className="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <div className="bg-blue-100 p-2 rounded-full mr-3">
+                              <span className="text-blue-600">
+                                <DropletsIcon />
+                              </span>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="font-medium text-gray-700">Average Rainfall</p>
+                              <p className="text-sm text-gray-600">
+                                {predictionData.environmental_factors.rainfall.toFixed(1)} mm per month
+                              </p>
+                            </div>
+                            <div className="bg-blue-50 px-3 py-1 rounded-full">
+                              <span className="text-blue-800 font-medium">Adequate</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {predictionData.environmental_factors.temperature_range && (
+                          <div className="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <div className="bg-orange-100 p-2 rounded-full mr-3">
+                              <span className="text-orange-600">
+                                <ThermometerIcon />
+                              </span>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="font-medium text-gray-700">Temperature Range</p>
+                              <p className="text-sm text-gray-600">
+                                {predictionData.environmental_factors.temperature_range}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 px-3 py-1 rounded-full">
+                              <span className="text-green-800 font-medium">Optimal</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {predictionData.environmental_factors.soil_type && (
+                          <div className="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <div className="bg-green-100 p-2 rounded-full mr-3">
+                              <span className="text-green-600">
+                                <MapIcon />
+                              </span>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="font-medium text-gray-700">Soil Type</p>
+                              <p className="text-sm text-gray-600">
+                                {predictionData.environmental_factors.soil_type}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 px-3 py-1 rounded-full">
+                              <span className="text-green-800 font-medium">Suitable</span>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {predictionData.environmental_factors.growing_period && (
+                          <div className="flex items-center p-3 border border-gray-200 rounded-lg">
+                            <div className="bg-yellow-100 p-2 rounded-full mr-3">
+                              <span className="text-yellow-600">
+                                <CalendarIcon />
+                              </span>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="font-medium text-gray-700">Growing Period</p>
+                              <p className="text-sm text-gray-600">
+                                {predictionData.environmental_factors.growing_period}
+                              </p>
+                            </div>
+                            <div className="bg-green-50 px-3 py-1 rounded-full">
+                              <span className="text-green-800 font-medium">Normal</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg">
-                      <div className="bg-orange-100 p-2 rounded-full mr-3">
-                        <span className="text-orange-600">
-                          <ThermometerIcon />
-                        </span>
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-medium text-gray-700">Temperature Range</p>
-                        <p className="text-sm text-gray-500">24°C - 32°C</p>
-                      </div>
-                      <div className="bg-green-50 px-3 py-1 rounded-full">
-                        <span className="text-green-800 font-medium">Optimal</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg">
-                      <div className="bg-green-100 p-2 rounded-full mr-3">
-                        <span className="text-green-600">
-                          <MapIcon />
-                        </span>
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-medium text-gray-700">Soil Type</p>
-                        <p className="text-sm text-gray-500">Loamy soil with good drainage</p>
-                      </div>
-                      <div className="bg-green-50 px-3 py-1 rounded-full">
-                        <span className="text-green-800 font-medium">Suitable</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center p-3 border border-gray-200 rounded-lg">
-                      <div className="bg-yellow-100 p-2 rounded-full mr-3">
-                        <span className="text-yellow-600">
-                          <CalendarIcon />
-                        </span>
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-medium text-gray-700">Growing Period</p>
-                        <p className="text-sm text-gray-500">120-150 days</p>
-                      </div>
-                      <div className="bg-green-50 px-3 py-1 rounded-full">
-                        <span className="text-green-800 font-medium">Normal</span>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>
