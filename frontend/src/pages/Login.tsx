@@ -38,17 +38,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [currentLanguage, setCurrentLanguage] = useState(languages[0]);
   const [isLoading, setIsLoading] = useState(false);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Simulate login process
-    setTimeout(() => {
-      setIsLoading(false);
-      navigate("/dashboard");
-    }, 1500);
-  };
+  const [activeTab, setActiveTab] = useState("login"); // State to control the active tab
 
   // Content for different languages 
   const content = {
@@ -102,7 +92,6 @@ export default function Login() {
       or: "या",
       continueWith: "के साथ जारी रखें",
     },
-    // Other language translations could be added here
   };
 
   // Get content based on current language (fallback to English)
@@ -140,7 +129,7 @@ export default function Login() {
       </div>
 
       <div className="max-w-md mx-auto">
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs defaultValue="login" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-8">
             <TabsTrigger value="login">{t.login}</TabsTrigger>
             <TabsTrigger value="signup">{t.signup}</TabsTrigger>
@@ -153,92 +142,94 @@ export default function Login() {
                 <CardDescription>{t.loginDesc}</CardDescription>
               </CardHeader>
               <CardContent>
-              <form
-   onSubmit={async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setIsLoading(true);
 
-    const email = (document.getElementById("email") as HTMLInputElement).value;
-    const password = (document.getElementById("password") as HTMLInputElement).value;
+                    const email = (document.getElementById("email") as HTMLInputElement).value;
+                    const password = (document.getElementById("password") as HTMLInputElement).value;
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+                    try {
+                      const response = await fetch("http://localhost:5000/api/auth/login", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        credentials: "include", // Include cookies for session
+                        body: JSON.stringify({ email, password }),
+                      });
 
-      const data = await response.json();
-      console.log("API Response:", data); // ✅ show message in console
+                      const data = await response.json();
+                      console.log("API Response:", data);
 
-      if (response.ok) {
-        alert(data.msg || "Login successful");
-        navigate("/dashboard"); // ✅ only if status is 200
-      } else {
-        console.warn("Login failed:", data.msg);
-        alert(data.msg || "Login failed");
-      }
-    } catch (error) {
-      console.error("Login Error:", error);
-      alert("Something went wrong while logging in.");
-    } finally {
-      setIsLoading(false);
-    }
-  }}
->
-  <div className="grid gap-4">
-    <div className="grid gap-2">
-      <Label htmlFor="email">{t.emailLabel}</Label>
-      <Input
-        id="email"
-        type="email"
-        placeholder={t.emailPlaceholder}
-        required
-      />
-    </div>
-    <div className="grid gap-2">
-      <div className="flex items-center justify-between">
-        <Label htmlFor="password">{t.passwordLabel}</Label>
-        <Link to="/forgot-password" className="text-sm text-agri-600 hover:text-agri-700">
-          {t.forgotPassword}
-        </Link>
-      </div>
-      <Input
-        id="password"
-        type="password"
-        placeholder={t.passwordPlaceholder}
-        required
-      />
-    </div>
-    <div className="flex items-center space-x-2">
-      <input
-        type="checkbox"
-        id="remember"
-        className="h-4 w-4 rounded border-gray-300 text-agri-600 focus:ring-agri-600"
-      />
-      <Label htmlFor="remember" className="text-sm font-normal">
-        {t.rememberMe}
-      </Label>
-    </div>
-    <Button type="submit" className="w-full bg-agri-500 hover:bg-agri-600" disabled={isLoading}>
-      {isLoading ? (
-        <span className="flex items-center justify-center">
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          {t.loginButton}...
-        </span>
-      ) : (
-        t.loginButton
-      )}
-    </Button>
-  </div>
-</form>
+                      if (response.ok) {
+                        alert(data.msg || "Login successful");
+                        // Store user data in localStorage or context if needed
+                        localStorage.setItem("user", JSON.stringify({ name: data.user?.name, email: data.user?.email }));
+                        navigate("/dashboard");
+                      } else {
+                        console.warn("Login failed:", data.msg);
+                        alert(data.msg || "Login failed");
+                      }
+                    } catch (error) {
+                      console.error("Login Error:", error);
+                      alert("Something went wrong while logging in.");
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                >
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="email">{t.emailLabel}</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder={t.emailPlaceholder}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">{t.passwordLabel}</Label>
+                        <Link to="/forgot-password" className="text-sm text-agri-600 hover:text-agri-700">
+                          {t.forgotPassword}
+                        </Link>
+                      </div>
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder={t.passwordPlaceholder}
+                        required
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="remember"
+                        className="h-4 w-4 rounded border-gray-300 text-agri-600 focus:ring-agri-600"
+                      />
+                      <Label htmlFor="remember" className="text-sm font-normal">
+                        {t.rememberMe}
+                      </Label>
+                    </div>
+                    <Button type="submit" className="w-full bg-agri-500 hover:bg-agri-600" disabled={isLoading}>
+                      {isLoading ? (
+                        <span className="flex items-center justify-center">
+                          <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          {t.loginButton}...
+                        </span>
+                      ) : (
+                        t.loginButton
+                      )}
+                    </Button>
+                  </div>
+                </form>
 
-                
                 <div className="mt-6">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
@@ -277,81 +268,80 @@ export default function Login() {
                 <CardDescription>{t.signupDesc}</CardDescription>
               </CardHeader>
               <CardContent>
-              <form
-  onSubmit={async (e) => {
-    e.preventDefault();
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
 
-    const name = (document.getElementById("name") as HTMLInputElement).value;
-    const email = (document.getElementById("signup-email") as HTMLInputElement).value;
-    const phone = (document.getElementById("phone") as HTMLInputElement).value;
-    const password = (document.getElementById("signup-password") as HTMLInputElement).value;
-    const confirmPassword = (document.getElementById("confirm-password") as HTMLInputElement).value;
+                    const name = (document.getElementById("name") as HTMLInputElement).value;
+                    const email = (document.getElementById("signup-email") as HTMLInputElement).value;
+                    const phone = (document.getElementById("phone") as HTMLInputElement).value;
+                    const password = (document.getElementById("signup-password") as HTMLInputElement).value;
+                    const confirmPassword = (document.getElementById("confirm-password") as HTMLInputElement).value;
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+                    if (password !== confirmPassword) {
+                      alert("Passwords do not match");
+                      return;
+                    }
 
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          phone,
-          password,
-          confirmPassword,
-        }),
-      });
-  
-      const data = await response.json();
-      console.log("API Response:", data); // ✅ Show the full response in console
-  
-      alert(data.msg || "Something went wrong"); // ✅ Show backend message in popup
-  
-      if (response.ok) {
-        // Redirect after success
-        // Uncomment the line below if you want to redirect
-        // navigate("/Dashboard");
-      }
-  
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Something went wrong!");
-    }
-  }}
->
-  <div className="grid gap-4">
-    <div className="grid gap-2">
-      <Label htmlFor="name">{t.nameLabel}</Label>
-      <Input id="name" placeholder={t.namePlaceholder} required />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="signup-email">{t.emailLabel}</Label>
-      <Input id="signup-email" type="email" placeholder={t.emailPlaceholder} required />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="phone">{t.phoneLabel}</Label>
-      <Input id="phone" type="tel" placeholder={t.phonePlaceholder} required />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="signup-password">{t.passwordLabel}</Label>
-      <Input id="signup-password" type="password" placeholder={t.passwordPlaceholder} required />
-    </div>
-    <div className="grid gap-2">
-      <Label htmlFor="confirm-password">{t.confirmPasswordLabel}</Label>
-      <Input id="confirm-password" type="password" placeholder={t.confirmPasswordPlaceholder} required />
-    </div>
-    <Button type="submit" className="w-full bg-agri-500 hover:bg-agri-600">
-      {t.signupButton}
-    </Button>
-  </div>
-</form>
+                    try {
+                      const response = await fetch("http://localhost:5000/api/auth/register", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                        },
+                        credentials: "include",
+                        body: JSON.stringify({
+                          name,
+                          email,
+                          phone,
+                          password,
+                          confirmPassword,
+                        }),
+                      });
+                  
+                      const data = await response.json();
+                      console.log("API Response:", data);
+                  
+                      alert(data.msg || "Something went wrong");
+                  
+                      if (response.ok) {
+                        localStorage.setItem("user", JSON.stringify({ name, email }));
+                        setActiveTab("login"); // Switch to login tab instead of navigating
+                      }
+                  
+                    } catch (error) {
+                      console.error("Error:", error);
+                      alert("Something went wrong!");
+                    }
+                  }}
+                >
+                  <div className="grid gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="name">{t.nameLabel}</Label>
+                      <Input id="name" placeholder={t.namePlaceholder} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="signup-email">{t.emailLabel}</Label>
+                      <Input id="signup-email" type="email" placeholder={t.emailPlaceholder} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="phone">{t.phoneLabel}</Label>
+                      <Input id="phone" type="tel" placeholder={t.phonePlaceholder} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="signup-password">{t.passwordLabel}</Label>
+                      <Input id="signup-password" type="password" placeholder={t.passwordPlaceholder} required />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="confirm-password">{t.confirmPasswordLabel}</Label>
+                      <Input id="confirm-password" type="password" placeholder={t.confirmPasswordPlaceholder} required />
+                    </div>
+                    <Button type="submit" className="w-full bg-agri-500 hover:bg-agri-600">
+                      {t.signupButton}
+                    </Button>
+                  </div>
+                </form>
 
-                
                 <div className="mt-6">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Outlet } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -28,6 +28,7 @@ import {
 export default function Dashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState({ name: "User", email: "user@example.com" });
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -36,6 +37,41 @@ export default function Dashboard() {
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/user", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include", // Include session cookies
+        });
+
+        const data = await response.json();
+        if (response.ok && data.user) {
+          setUser({ name: data.user.name, email: data.user.email });
+        } else {
+          console.warn("Failed to fetch user data:", data.msg);
+          // Fallback to localStorage if session fetch fails
+          const storedUser = localStorage.getItem("user");
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        // Fallback to localStorage
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -171,13 +207,13 @@ export default function Dashboard() {
                     <div className="w-8 h-8 rounded-full bg-agri-100 flex items-center justify-center">
                       <User className="h-4 w-4 text-agri-600" />
                     </div>
-                    <span className="hidden md:inline text-sm font-medium">Rajesh Kumar</span>
+                    <span className="hidden md:inline text-sm font-medium">{user.name}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="p-2">
-                    <p className="text-sm font-medium">Rajesh Kumar</p>
-                    <p className="text-xs text-gray-500">rajesh@example.com</p>
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="cursor-pointer">

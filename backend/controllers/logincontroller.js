@@ -1,6 +1,5 @@
 const LoginUser = require("../models/login_user");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
 
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -16,9 +15,18 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ msg: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user._id }, "yourSecretKey", { expiresIn: "1h" });
+    // ✅ Store user info in session (instead of JWT)
+    req.session.user = {
+      id: user._id,
+      name: user.name,
+      email: user.email
+    };
 
-    res.status(200).json({ msg: "Login successful", token });
+    // ✅ Send session user info back
+    res.status(200).json({
+      msg: "Login successful",
+      user: req.session.user
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ msg: "Server error" });
