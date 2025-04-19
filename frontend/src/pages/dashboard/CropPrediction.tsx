@@ -10,9 +10,9 @@ type SoilParameter = {
   humidity: string;
 };
 
-type CropOption = {
-  value: string;
-  label: string;
+type CropPrediction = {
+  crop: string;
+  confidence: number;
 };
 
 export default function CropPrediction() {
@@ -27,21 +27,10 @@ export default function CropPrediction() {
   });
   
   const [selectedCrop, setSelectedCrop] = useState<string>('');
-  const [predictions, setPredictions] = useState<string[]>([]);
+  const [predictions, setPredictions] = useState<CropPrediction[]>([]);
   const [fertilizer, setFertilizer] = useState<string>('');
   const [isPredicting, setIsPredicting] = useState(false);
   const [isFetchingFertilizer, setIsFetchingFertilizer] = useState(false);
-  
-  const cropOptions: CropOption[] = [
-    { value: 'rice', label: 'Rice' },
-    { value: 'wheat', label: 'Wheat' },
-    { value: 'maize', label: 'Maize' },
-    { value: 'cotton', label: 'Cotton' },
-    { value: 'sugarcane', label: 'Sugarcane' },
-    { value: 'soybean', label: 'Soybean' },
-    { value: 'tomato', label: 'Tomato' },
-    { value: 'potato', label: 'Potato' }
-  ];
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,24 +45,46 @@ export default function CropPrediction() {
     setFertilizer(''); // Clear previous fertilizer recommendations
   };
   
-  const predictCrops = () => {
-    // Validate inputs
+  const predictCrops = async () => {
     if (!validateInputs()) {
       return;
     }
     
     setIsPredicting(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // This would connect to your AI model in a real application
-      const mockPredictions = ['Wheat', 'Rice', 'Maize'];
-      setPredictions(mockPredictions);
+    try {
+      const response = await fetch('https://crop-recommendation-gc3x.onrender.com/predict_crops', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          n: parseFloat(soilParams.nitrogen),
+          p: parseFloat(soilParams.phosphorus),
+          k: parseFloat(soilParams.potassium),
+          temp: parseFloat(soilParams.temperature) || 0,
+          humidity: parseFloat(soilParams.humidity) || 0,
+          ph: parseFloat(soilParams.ph),
+          rainfall: parseFloat(soilParams.rainfall) || 0
+        })
+      });
+      
+      const data = await response.json();
+
+      if (!response.ok || !data.predictions) {
+        throw new Error(data.error || 'Something went wrong with prediction');
+      }
+
+      setPredictions(data.predictions.slice(0, 5)); // Take top 5 predictions
+    } catch (error) {
+      console.error('Error fetching predictions:', error);
+      alert('Failed to fetch crop predictions. Please try again.');
+    } finally {
       setIsPredicting(false);
-    }, 1500);
+    }
   };
   
-  const getFertilizerAdvice = () => {
+  const getFertilizerAdvice = async () => {
     if (!selectedCrop) {
       alert('Please select a crop first');
       return;
@@ -81,23 +92,33 @@ export default function CropPrediction() {
     
     setIsFetchingFertilizer(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // This would connect to your fertilizer recommendation system
-      const cropName = cropOptions.find(c => c.value === selectedCrop)?.label || selectedCrop;
+    try {
+      const response = await fetch('https://crop-recommendation-gc3x.onrender.com/fertilizer_advice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          crop: selectedCrop,
+          n: parseFloat(soilParams.nitrogen),
+          p: parseFloat(soilParams.phosphorus),
+          k: parseFloat(soilParams.potassium)
+        })
+      });
       
-      const recommendations = {
-        rice: "For Rice, apply 120kg/ha nitrogen in split doses (50% at transplanting, 25% at tillering, 25% at panicle initiation), 60kg/ha phosphorus as basal application, and 60kg/ha potassium (50% basal, 50% at panicle initiation).",
-        wheat: "For Wheat, apply 120kg/ha nitrogen (50% as basal, 25% at crown root initiation, 25% at tillering), 60kg/ha P₂O₅ and 40kg/ha K₂O as basal application. Add zinc sulfate at 25kg/ha if soil zinc is deficient.",
-        maize: "For Maize, apply NPK in ratio 120:60:40 kg/ha. Apply nitrogen in three splits: 20% at sowing, 50% at knee-high stage, and 30% at tasseling. Apply full dose of P and K as basal application.",
-        cotton: "For Cotton, apply 100kg/ha nitrogen in three splits, 50kg/ha phosphorus as basal application, and 50kg/ha potassium (50% basal, 50% at flowering). Consider foliar application of 2% DAP at boll development stage."
-      };
-      
-      setFertilizer(recommendations[selectedCrop as keyof typeof recommendations] || 
-        `For ${cropName}, we recommend a balanced NPK fertilizer with higher nitrogen content. Apply 100kg/ha nitrogen, 50kg/ha phosphorus, and 40kg/ha potassium in split doses throughout the growing season.`);
-      
+      const data = await response.json();
+
+      if (!response.ok || !data.advice) {
+        throw new Error(data.error || 'Something went wrong with fertilizer advice');
+      }
+
+      setFertilizer(data.advice);
+    } catch (error) {
+      console.error('Error fetching fertilizer advice:', error);
+      alert('Failed to fetch fertilizer advice. Please try again.');
+    } finally {
       setIsFetchingFertilizer(false);
-    }, 1500);
+    }
   };
   
   const validateInputs = () => {
@@ -109,7 +130,6 @@ export default function CropPrediction() {
       return false;
     }
     
-    // Validate ranges
     if (parseFloat(soilParams.ph) < 0 || parseFloat(soilParams.ph) > 14) {
       alert('pH must be between 0 and 14');
       return false;
@@ -165,12 +185,12 @@ export default function CropPrediction() {
           <div className="mt-8 p-4 bg-green-700 rounded-lg">
             <h3 className="text-xl font-semibold mb-3">Recommended Crops:</h3>
             <ul className="space-y-2">
-              {predictions.map((crop, index) => (
+              {predictions.map((pred, index) => (
                 <li key={index} className="flex items-center">
                   <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center mr-3">
                     {index + 1}
                   </div>
-                  <span className="text-lg">{crop}</span>
+                  <span className="text-lg">{pred.crop} ({(pred.confidence * 100).toFixed(2)}%)</span>
                 </li>
               ))}
             </ul>
@@ -210,7 +230,7 @@ export default function CropPrediction() {
                 value={soilParams.nitrogen}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 80"
+                placeholder="Range, 0-140"
               />
               <span className="absolute right-3 top-2 text-gray-500">kg/ha</span>
             </div>
@@ -228,7 +248,7 @@ export default function CropPrediction() {
                 value={soilParams.phosphorus}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 45"
+                placeholder="Range, 0-140"
               />
               <span className="absolute right-3 top-2 text-gray-500">kg/ha</span>
             </div>
@@ -246,7 +266,7 @@ export default function CropPrediction() {
                 value={soilParams.potassium}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 50"
+                placeholder="Range, 0-200"
               />
               <span className="absolute right-3 top-2 text-gray-500">kg/ha</span>
             </div>
@@ -263,7 +283,7 @@ export default function CropPrediction() {
               value={soilParams.ph}
               onChange={handleInputChange}
               className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="e.g., 6.5"
+              placeholder="Range, 3.5-9"
             />
           </div>
           
@@ -279,7 +299,7 @@ export default function CropPrediction() {
                 value={soilParams.rainfall}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 1200"
+                placeholder="Range , 0-500"
               />
               <span className="absolute right-3 top-2 text-gray-500">mm</span>
             </div>
@@ -297,7 +317,7 @@ export default function CropPrediction() {
                 value={soilParams.temperature}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 25"
+                placeholder="Range, 0-60"
               />
               <span className="absolute right-3 top-2 text-gray-500">°C</span>
             </div>
@@ -315,7 +335,7 @@ export default function CropPrediction() {
                 value={soilParams.humidity}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="e.g., 65"
+                placeholder="Range, 10-100"
               />
               <span className="absolute right-3 top-2 text-gray-500">%</span>
             </div>
@@ -346,11 +366,12 @@ export default function CropPrediction() {
             value={selectedCrop}
             onChange={handleCropChange}
             className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-green-500"
+            disabled={predictions.length === 0}
           >
             <option value="">-- Select Crop --</option>
-            {cropOptions.map(crop => (
-              <option key={crop.value} value={crop.value}>
-                {crop.label}
+            {predictions.map(pred => (
+              <option key={pred.crop} value={pred.crop}>
+                {pred.crop} ({(pred.confidence * 100).toFixed(2)}%)
               </option>
             ))}
           </select>
