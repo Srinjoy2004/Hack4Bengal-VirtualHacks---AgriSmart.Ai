@@ -4,19 +4,18 @@ import { Upload, Camera, Leaf, AlertCircle, CheckCircle, RefreshCw } from 'lucid
 export default function DiseasePredictionPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [plantType, setPlantType] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
-  const [result, setResult] = useState<{ disease: string; confidence: number; treatment: string } | null>(null);
-
-  const plantTypes = [
-    "Tomato", "Potato", "Corn", "Apple", "Grape", "Rice", 
-    "Wheat", "Soybean", "Cucumber", "Strawberry", "Coffee",
-    "Orange", "Pepper", "Cherry", "Peach", "Cotton"
-  ];
+  const [result, setResult] = useState<{
+    disease: string;
+    confidence: number;
+    description: string;
+    treatment: string[];
+  } | null>(null);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      console.log('Selected file:', file);
       setSelectedFile(file);
       
       const fileReader = new FileReader();
@@ -36,6 +35,7 @@ export default function DiseasePredictionPage() {
     event.preventDefault();
     const file = event.dataTransfer.files?.[0];
     if (file) {
+      console.log('Dropped file:', file);
       setSelectedFile(file);
       
       const fileReader = new FileReader();
@@ -47,27 +47,133 @@ export default function DiseasePredictionPage() {
     }
   };
 
-  const handleAnalyze = () => {
-    if (!selectedFile || !plantType) return;
+  const fetchGeminiTreatment = async (disease: string) => {
+    const apiKey = 'AIzaSyDD8QW1BggDVVMLteDygHCHrD6Ff9Dy0e8';
+    const prompt = `Provide a concise description (1-2 sentences) of the plant disease "${disease}" and suggest exactly 3 bullet point treatments. Format the response as:
+Description: [Your description]
+Treatments:
+- [Treatment 1]
+- [Treatment 2]
+- [Treatment 3]`;
+
+    try {
+      console.log('Sending request to Gemini API for disease:', disease);
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-pro:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      });
+
+      console.log('Gemini API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Gemini API error:', errorText);
+        throw new Error(`Gemini API request failed with status ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Gemini API response data:', data);
+      
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      
+      if (!text) {
+        throw new Error('No valid response from Gemini API');
+      }
+      
+      // Parse the response
+      const descriptionMatch = text.match(/Description: (.*?)\nTreatments:/s);
+      const treatmentsMatch = text.match(/- (.*?)(?:\n- (.*?))?(?:\n- (.*?))?$/s);
+      
+      return {
+        description: descriptionMatch ? descriptionMatch[1].trim() : 'No description available.',
+        treatments: treatmentsMatch ? treatmentsMatch.slice(1).filter(t => t).map(t => t.trim()) : []
+      };
+    } catch (error) {
+      console.error('Error fetching from Gemini API:', error);
+      return {
+        description: 'Unable to fetch description.',
+        treatments: ['Consult a local agricultural expert for treatment options.']
+      };
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!selectedFile) {
+      console.error('No file selected');
+      setResult({
+        disease: 'Error',
+        confidence: 0,
+        description: 'Please upload an image to analyze.',
+        treatment: ['Select an image and try again.']
+      });
+      setIsAnalyzing(false);
+      return;
+    }
     
     setIsAnalyzing(true);
     
-    // Mock analysis - in a real app, this would call an API
-    setTimeout(() => {
-      setIsAnalyzing(false);
-      // Mock result
-      setResult({
-        disease: "Leaf Spot Disease",
-        confidence: 94.7,
-        treatment: "1. Apply copper-based fungicide every 7-10 days.\n2. Ensure proper spacing between plants for better air circulation.\n3. Remove and dispose of affected leaves properly.\n4. Water at the base of plants to keep foliage dry.\n5. Consider crop rotation for next season."
+    try {
+      // Create FormData and append file
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      
+      // Debug FormData content
+      console.log('FormData content:');
+      for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+      }
+      
+      // Call the disease prediction API
+      console.log('Sending request to prediction API...');
+      const predictionResponse = await fetch('https://render-begins-musharraf.onrender.com/predict', {
+        method: 'POST',
+        body: formData,
       });
-    }, 2000);
+      
+      console.log('Prediction API response status:', predictionResponse.status);
+      
+      if (!predictionResponse.ok) {
+        const errorText = await predictionResponse.text();
+        console.error('Prediction API error:', errorText);
+        throw new Error(`API request failed with status ${predictionResponse.status}: ${errorText}`);
+      }
+      
+      const predictionData = await predictionResponse.json();
+      console.log('Prediction API response data:', predictionData);
+      
+      const disease = predictionData.prediction || 'Unknown Disease';
+      
+      // Fetch treatment recommendations from Gemini API
+      const { description, treatments } = await fetchGeminiTreatment(disease);
+      
+      setResult({
+        disease,
+        confidence: predictionData.confidence || 90,
+        description,
+        treatment: treatments
+      });
+      console.log('Setting result:', { disease, confidence: predictionData.confidence || 90, description, treatment: treatments });
+    } catch (error) {
+      console.error('Error during analysis:', error);
+      setResult({
+        disease: 'Analysis Failed',
+        confidence: 0,
+        description: 'Unable to analyze the image.',
+        treatment: ['Please try again or contact support.']
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const resetForm = () => {
     setSelectedFile(null);
     setPreviewUrl(null);
-    setPlantType('');
     setResult(null);
   };
 
@@ -157,32 +263,11 @@ export default function DiseasePredictionPage() {
                 />
               </div>
 
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Select Plant Type</label>
-                <div className="relative">
-                  <select
-                    value={plantType}
-                    onChange={(e) => setPlantType(e.target.value)}
-                    className="w-full p-3 pl-4 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white appearance-none"
-                  >
-                    <option value="">Select plant type</option>
-                    {plantTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="6 9 12 15 18 9"></polyline>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
               <button
                 onClick={handleAnalyze}
-                disabled={!selectedFile || !plantType || isAnalyzing}
+                disabled={!selectedFile || isAnalyzing}
                 className={`w-full mt-6 p-4 rounded-lg text-white font-medium flex items-center justify-center transition-all ${
-                  !selectedFile || !plantType || isAnalyzing
+                  !selectedFile || isAnalyzing
                     ? 'bg-green-400 cursor-not-allowed'
                     : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 shadow-md hover:shadow-lg'
                 }`}
@@ -214,10 +299,6 @@ export default function DiseasePredictionPage() {
                 </div>
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium text-gray-700">Selected Plant:</h3>
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">{plantType}</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium text-gray-700">Detected Issue:</h3>
                     <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">{result.disease}</span>
                   </div>
@@ -232,10 +313,14 @@ export default function DiseasePredictionPage() {
                   </div>
                 </div>
                 <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                  <h3 className="font-medium text-gray-800 mb-2">Disease Description:</h3>
+                  <p className="text-gray-700 text-sm mb-2">{result.description}</p>
                   <h3 className="font-medium text-gray-800 mb-2">Recommended Treatment:</h3>
-                  <div className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-                    {result.treatment}
-                  </div>
+                  <ul className="text-gray-700 text-sm leading-relaxed list-disc pl-5">
+                    {result.treatment.map((treatment, index) => (
+                      <li key={index}>{treatment}</li>
+                    ))}
+                  </ul>
                 </div>
                 <button 
                   onClick={resetForm}
@@ -267,7 +352,7 @@ export default function DiseasePredictionPage() {
                       <span className="text-green-600 font-medium text-sm">2</span>
                     </div>
                     <div className="ml-3">
-                      <p className="text-gray-700">Select the plant type for more accurate results</p>
+                      <p className="text-gray-700">Click analyze to process the image</p>
                     </div>
                   </div>
                   <div className="flex items-start">
