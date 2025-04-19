@@ -161,6 +161,7 @@ Database (SQLAlchemy)
 **Team Name:** AgriSmart.Ai  
 👨‍💻 **Team Lead:** Srinjoy Pramanik
 **Team Members :** Arpan Chowdhury I Syed Md.Musharraf I Subhabilas
+
 🏫 **Hackathon:** Hack4Bengal Virtual Hacks
 
 ---
