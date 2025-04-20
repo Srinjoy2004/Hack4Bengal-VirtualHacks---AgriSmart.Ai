@@ -53,7 +53,7 @@
 
 ### 🗣️ Multilingual Chatbot for Farmers
 
-![Multilingual Chatbot for Farmers](Screenshot (947).png)
+![Multilingual Chatbot for Farmers](chatbot.png)
 
 *Answers farmers’ questions related to farming, including crops, weather, and pests, in multiple regional languages to ensure better accessibility and support.*
 
