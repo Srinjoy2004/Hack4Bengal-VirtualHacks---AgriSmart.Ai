@@ -321,7 +321,7 @@ export default function CropProductionPrediction() {
                     </div>
                   </div>
                   <p className="text-3xl font-bold text-green-700">
-                    {typeof predictionData.predicted_production === 'number' ? predictionData.predicted_production.toFixed(1) : 'N/A'} q
+                    {typeof predictionData.predicted_production === 'number' ? predictionData.predicted_production.toFixed(1) : 'N/A'} tonnes
                   </p>
                   <p className="text-sm text-gray-600 mt-1">Total expected production</p>
                 </div>
