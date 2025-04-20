@@ -30,7 +30,7 @@
 | 🌦️ **Weather Forecasting for Optimal Farming** | 🧪 **Experimentation with ML Models** |
 | 🧪 **Soil Health Monitoring** | 🔍 **Analysis of Crop Patterns** |
 | 📈 **Yield Prediction and Recommendations** | 📚 **Contribution to Open-Source Agricultural Tools** |
-| 🗣️ ** Multilingual Chatbot for Farming Queries** | 🧪 ** Develop and Test ML Models for Agriculture** |
+| 🗣️ **Multilingual Chatbot for Farming Queries** | 🧪 **Develop and Test ML Models for Agriculture** |
 
 ---
 
