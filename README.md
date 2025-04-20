@@ -86,9 +86,9 @@
 
 ### 🔧 Backend
 
-- `Python`
+- `Python`,`Nodejs`,`Expressjs`
 - `Flask` for API development
-- `SQLAlchemy` for database interactions
+- `Mongodb` for database interactions
 
 ### 🤖 Machine Learning & AI
 
@@ -130,7 +130,7 @@ User Interface
      ↓
 Frontend (HTML/CSS/JS)
      ↓
-Backend (Flask API)
+Backend (Nodejs)
      ↓
 Machine Learning Models
      ↓
