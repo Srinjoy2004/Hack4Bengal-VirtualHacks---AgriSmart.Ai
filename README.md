@@ -47,11 +47,17 @@
 
 *Evaluates key soil parameters like pH, NPK levels, and moisture to recommend the most suitable crops tailored to local conditions.*
 
-### 🖼️ Weather Forecasting
 
-![Weather Forecasting](path_to_weather_forecasting_image.png)
 
-*Integrates real-time weather updates to enable farmers to make informed choices that maximize profitability.*
+
+
+### 🗣️ Multilingual Chatbot for Farmers
+
+![Multilingual Chatbot for Farmers](Screenshot (947).png)
+
+*Answers farmers’ questions related to farming, including crops, weather, and pests, in multiple regional languages to ensure better accessibility and support.*
+
+---
 
 ### 🖼️ Yield Prediction
 
