@@ -37,13 +37,13 @@
 
 ### 🖼️ Crop Disease Detection
 
-![Crop Disease Detection Model](path_to_crop_disease_detection_image.png)
+![Crop Disease Detection Model](disease_prediction.png)
 
 *Utilizes a custom-built Convolutional Neural Network (CNN) optimized for low-resource devices to detect crop diseases in real-time.*
 
 ### 🖼️ Soil Health Analysis
 
-![Soil Health Analysis](path_to_soil_health_analysis_image.png)
+![Soil Health Analysis](crop_prediction.png)
 
 *Evaluates key soil parameters like pH, NPK levels, and moisture to recommend the most suitable crops tailored to local conditions.*
 
@@ -55,7 +55,7 @@
 
 ### 🖼️ Yield Prediction
 
-![Yield Prediction](path_to_yield_prediction_image.png)
+![Yield Prediction](yeild_prediction.png)
 
 *Uses time series forecasting models to predict future crop yields, empowering farmers with valuable insights into market trends.*
 
