@@ -30,6 +30,7 @@
 | 🌦️ **Weather Forecasting for Optimal Farming** | 🧪 **Experimentation with ML Models** |
 | 🧪 **Soil Health Monitoring** | 🔍 **Analysis of Crop Patterns** |
 | 📈 **Yield Prediction and Recommendations** | 📚 **Contribution to Open-Source Agricultural Tools** |
+| 🗣️ **Multilingual Chatbot for Farming Queries** | 🧪 **Develop and Test ML Models for Agriculture** |
 
 ---
 
@@ -47,11 +48,17 @@
 
 *Evaluates key soil parameters like pH, NPK levels, and moisture to recommend the most suitable crops tailored to local conditions.*
 
-### 🖼️ Weather Forecasting
 
-![Weather Forecasting](path_to_weather_forecasting_image.png)
 
-*Integrates real-time weather updates to enable farmers to make informed choices that maximize profitability.*
+
+
+### 🗣️ Multilingual Chatbot for Farmers
+
+![Multilingual Chatbot for Farmers](chatbot.png)
+
+*Answers farmers’ questions related to farming, including crops, weather, and pests, in multiple regional languages to ensure better accessibility and support.*
+
+---
 
 ### 🖼️ Yield Prediction
 
@@ -79,9 +86,9 @@
 
 ### 🔧 Backend
 
-- `Python`
+- `Python`,`Nodejs`,`Expressjs`
 - `Flask` for API development
-- `SQLAlchemy` for database interactions
+- `Mongodb` for database interactions
 
 ### 🤖 Machine Learning & AI
 
@@ -123,7 +130,7 @@ User Interface
      ↓
 Frontend (HTML/CSS/JS)
      ↓
-Backend (Flask API)
+Backend (Nodejs)
      ↓
 Machine Learning Models
      ↓
