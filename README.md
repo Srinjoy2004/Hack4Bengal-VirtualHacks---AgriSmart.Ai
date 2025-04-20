@@ -176,6 +176,6 @@ Database (SQLAlchemy)
 Feel free to customize this `README.md` further to align with your project's specifics. If you have images or diagrams of your machine learning models, you can include them in the respective sections using markdown syntax:
 
 ### 🖼️ our model architecture
-![Model Architecture](model architecture.jpeg)
+![Model Architecture](model_architecture.jpeg)
 
 
