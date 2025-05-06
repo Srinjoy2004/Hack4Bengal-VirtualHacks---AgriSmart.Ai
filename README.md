@@ -5,7 +5,7 @@
 > **Empowering Farmers with AI-Driven Insights for Sustainable Farming**  
 > *Developed with passion for the Hack4Bengal Virtual Hacks.*
 
-![image](https://github.com/user-attachments/assets/a2360876-9441-4f58-a913-dbb71e362597)
+![image](homepage.png)
 
 
 ## 🚀 Overview
