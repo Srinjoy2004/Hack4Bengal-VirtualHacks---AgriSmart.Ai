@@ -5,7 +5,7 @@
 > **Empowering Farmers with AI-Driven Insights for Sustainable Farming**  
 > *Developed with passion for the Hack4Bengal Virtual Hacks.*
 
-![image](homepage.png)
+![image](agrismarthomepage.png)
 
 
 ## 🚀 Overview
